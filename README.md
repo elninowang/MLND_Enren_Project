@@ -38,17 +38,23 @@ for k,v in data_dict.items():
         if not k1 in all_features_list:
             all_features_list.add(k1)
 all_features_list = list(all_features_list)            
-print 'count: ',count," poi_count: ",poi_count, "features count:", len(all_features_list)
+print 'count: ',count," poi_count: ",poi_count, "features count:", len(all_features_list)-1
 print "all features coount:", all_features_list
 ```
 
-    count:  146  poi_count:  18 features count: 21
+    count:  146  poi_count:  18 features count: 20
     all features coount: ['salary', 'to_messages', 'deferral_payments', 'total_payments', 'loan_advances', 'bonus', 'email_address', 'restricted_stock_deferred', 'total_stock_value', 'shared_receipt_with_poi', 'long_term_incentive', 'exercised_stock_options', 'from_messages', 'other', 'from_poi_to_this_person', 'from_this_person_to_poi', 'poi', 'deferred_income', 'expenses', 'restricted_stock', 'director_fees']
     
 
-数据集中共有人数 ** 146 ** 人，其中涉嫌欺诈的有 **18** 人, 特征个数是 **21** 个
+数据集中共有人数 ** 146 ** 人，其中涉嫌欺诈的有 **18** 人, 特征个数是 **20** 个
 
-看看一个典型用户有哪些特征，其值是多少
+基于数据集具有以下特点，大致思路如下：
+
+- 这个数据集很不平衡（imbalance）, 也就说明accuracy并不是很好的评估指标，选择precision和recall更好一些。
+- 在交叉验证的时候，因为数据的不平衡性，我们会选用Stratified Shuffle Split的方式将数据分为验证集和测试集。
+- 数据样本比较少，因此我们可以使用GridSearchCV来进行参数调整，如果较大的数据则会花费较长的时间，可以考虑使用RandomizedSearchCV。
+
+看看一个典型用户有哪些特征，其值是多少。
 
 
 ```python
@@ -171,6 +177,8 @@ features_list = new_features_list
 
 
 ```python
+### Task 2: Remove outliers
+
 nan_salary_count = 0
 nan_bonus_count = 0
 poi_count_when_nan_salary_or_nan_bonu = 0
@@ -181,8 +189,7 @@ for k,v in data_dict.items():
         if v["poi"] == True:
             print k," - ", v["salary"], " ", v["bonus"]
 print
-print "nan_salary_count: ", nan_salary_count, " nan_bonus_count: ", nan_bonus_count
-        
+print "nan_salary_count: ", nan_salary_count, " nan_bonus_count: ", nan_bonus_count      
 ```
 
     YEAGER F SCOTT  -  158403   NaN
@@ -191,11 +198,55 @@ print "nan_salary_count: ", nan_salary_count, " nan_bonus_count: ", nan_bonus_co
     nan_salary_count:  51  nan_bonus_count:  64
     
 
+对所有人的名字做一下扫描，看看有没有异常的名字，名字中1到2个空格，我们打印出名字中空格书不是1或者2的人
+
+
+```python
+for name,_ in data_dict.items():
+    mini_names = name.split(' ')
+    if len(mini_names) != 2 and len(mini_names) != 3:
+        print name
+```
+
+    WALLS JR ROBERT H
+    BOWEN JR RAYMOND M
+    OVERDYKE JR JERE C
+    PEREIRA PAULO V. FERRAZ
+    BLAKE JR. NORMAN P
+    THE TRAVEL AGENCY IN THE PARK
+    TOTAL
+    WHITE JR THOMAS E
+    WINOKUR JR. HERBERT S
+    DERRICK JR. JAMES V
+    DONAHUE JR JEFFREY M
+    GLISAN JR BEN F
+    
+
+在其结果中看看，可以看出两个异常，一个是 `THE TRAVEL AGENCY IN THE PARK` 一个是 `TOTAL`
+
+检查每个人的各个属性，看看有没有绝大部分属性都是 NaN 的
+
+
+```python
+for k,v in data_dict.items():
+    nanCount = 0
+    for featurn,value in v.items():
+        if value == 'NaN': 
+            nanCount += 1
+    if nanCount > 18:
+        print k, " - ", nanCount
+            
+```
+
+    LOCKHART EUGENE E  -  20
+    
+
+发现 LOCKHART EUGENE E 的20个属性都是NaN，这个数据完全没有一样，也应该作为异常值删掉
+
 发现存在了不少 工资 或者 奖金 NaN, 但是这些里面存在POI人，不能说明是异常
 
 
 ```python
-### Task 2: Remove outliers
 bonus_idx = 4
 
 max_bonus = np.amax(X[:,bonus_idx])
@@ -214,12 +265,14 @@ TOTAL 是总数，这个是典型的异常值，所以一定要拿掉这个值
 
 ```python
 data_dict.pop("TOTAL", 0)
+data_dict.pop("THE TRAVEL AGENCY IN THE PARK", 0)
+data_dict.pop("LOCKHART EUGENE E", 0)
 y, X = targetFeatureSplit(featureFormat(data_dict, features_list))
 X = np.array(X)
 print X.shape
 ```
 
-    (144L, 10L)
+    (143L, 10L)
     
 
 看看 bonus或者salary 有没有小于0异常值
@@ -255,6 +308,43 @@ for k,v in data_dict.items():
 发现有2个人，这分别是大名鼎鼎的 Kenneth Lay 和 Jeffrey Skilling，很显然，他们不是异常值，他们是正常值
 
 ## 任务3: 创建新特征
+
+由于项目要求对比创建新特征前后，最后结果对比，由于机器学习算法很多，我就用朴素贝叶斯算法来做对比的，因为简单，我先记录下使用老特征用朴素贝叶斯的执行结果 f1。
+
+因为 f1 是 percision 和 recall 的综合得分
+
+
+```python
+data = featureFormat(data_dict, features_list, sort_keys = True)
+y, X = targetFeatureSplit(data)
+X = np.array(X)
+print "features ", X.shape
+print "lables ", len(y)
+
+from sklearn.model_selection import GridSearchCV
+from sklearn.cross_validation import StratifiedShuffleSplit
+from sklearn.naive_bayes import GaussianNB
+
+cv = StratifiedShuffleSplit(y, 100, random_state=42)
+naive_clf = GaussianNB()
+parameters = {}
+naive_clf_grid = GridSearchCV(naive_clf, parameters, cv=cv, scoring='f1')
+naive_clf_grid.fit(X, y)
+print "use only old feature f1 is: ", naive_clf_grid.best_score_
+```
+
+    features  (143L, 10L)
+    lables  143
+    
+
+    C:\Users\elnin\Anaconda2\lib\site-packages\sklearn\metrics\classification.py:1113: UndefinedMetricWarning: F-score is ill-defined and being set to 0.0 due to no predicted samples.
+      'precision', 'predicted', average, warn_for)
+    
+
+    use only old feature f1 is:  0.321380952381
+    
+
+下面开始创建新特性
 
 
 ```python
@@ -310,8 +400,8 @@ print "features ", X.shape
 print "lables ", len(y)
 ```
 
-    features  (144L, 13L)
-    lables  144
+    features  (143L, 13L)
+    lables  143
     
 
 特征增加了，再次用决策树看看，重要相关特征有哪些
@@ -327,15 +417,15 @@ for i in range(10):
     print "importance ", i, " - ", features_list[idx+1], " - ", clf.feature_importances_[idx]
 ```
 
-    clf.feature_importances_ :  [ 0.04232804  0.          0.02817127  0.04232804  0.          0.          0.
-      0.27209809  0.27220666  0.08300395  0.25986395  0.          0.        ]
-    importance  0  -  exercised_stock_options  -  0.272206660442
-    importance  1  -  expenses  -  0.272098088247
-    importance  2  -  from_this_to_poi_ratio  -  0.259863945578
-    importance  3  -  deferred_income  -  0.0830039525692
-    importance  4  -  long_term_incentive  -  0.042328042328
-    importance  5  -  bonus  -  0.042328042328
-    importance  6  -  restricted_stock  -  0.0281712685074
+    clf.feature_importances_ :  [ 0.04237037  0.          0.02814706  0.04237037  0.          0.          0.
+      0.27237019  0.272119    0.08308696  0.25953606  0.          0.        ]
+    importance  0  -  expenses  -  0.272370186335
+    importance  1  -  exercised_stock_options  -  0.272118995
+    importance  2  -  from_this_to_poi_ratio  -  0.259536062579
+    importance  3  -  deferred_income  -  0.0830869565217
+    importance  4  -  long_term_incentive  -  0.0423703703704
+    importance  5  -  bonus  -  0.0423703703704
+    importance  6  -  restricted_stock  -  0.0281470588235
     importance  7  -  bonus_times  -  0.0
     importance  8  -  from_poi_to_this_ratio  -  0.0
     importance  9  -  other  -  0.0
@@ -359,7 +449,7 @@ print "features ", X.shape
 print "lables ", len(y)
 ```
 
-    ['poi', 'exercised_stock_options', 'expenses', 'from_this_to_poi_ratio', 'deferred_income', 'long_term_incentive', 'bonus', 'restricted_stock']
+    ['poi', 'expenses', 'exercised_stock_options', 'from_this_to_poi_ratio', 'deferred_income', 'long_term_incentive', 'bonus', 'restricted_stock']
     features  (141L, 7L)
     lables  141
     
@@ -421,6 +511,8 @@ print "after pca f1: ", pca_naive_clf_grid.best_score_
     after pca f1:  0.377666666667
     
 
+结果出来，可以和前面的特征来对比，使用老特征的f1分数是 `0.321380952381` 使用新特征的f1分数是 `0.413857142857` 可以看出，使用新添加的特征后，结果是好于老特征的。
+
 ### 尝试决策树算法
 
 
@@ -441,7 +533,7 @@ pca_tree_clf_grid.fit(X, y)
 print "after pca f1: ", pca_tree_clf_grid.best_score_
 ```
 
-    before pca f1:  0.193714285714
+    before pca f1:  0.208412698413
     after pca f1:  0.38946031746
     
 
@@ -470,31 +562,6 @@ print "after pca f1: ", pca_knn_clf_grid.best_score_
     before pca f1:  0.267
     after pca f1:  0.314333333333
     
-
-### 尝试SVM算法
-
-** 很奇怪，svm 一直计算，远出不来结果，只能暂时屏蔽掉** 原因不明
-
-
-```python
-# # svm
-# from sklearn.svm import SVC
-# svm_clf = SVC(random_state=42)
-# parameters = {'kernel': ('rbf','linear'), 
-#               'C': [1,10]}
-# svm_clf_grid = GridSearchCV(svm_clf, parameters, cv=cv, scoring='f1')
-# svm_clf_grid.fit(X, y)
-# print "before pca f1: ", svm_clf_grid.best_score_
-
-# pca_svm_clf = Pipeline([('pca', pca), ('svc', svm_clf)])
-# parameters = {'pca__n_components': [3,5,7,9],
-#               'svc__kernel': ['rbf','linear'], 
-#               'svc__C': [1,10]
-#              }
-# pca_svm_clf_grid = GridSearchCV(pca_svm_clf, parameters, cv=cv, scoring='f1')
-# pca_svm_clf_grid.fit(X, y)
-# print "after pca f1: ", pca_svm_clf_grid.best_score_
-```
 
 ### 尝试一些集成学习算法，AdaBoost
 

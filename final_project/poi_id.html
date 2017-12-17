@@ -11821,7 +11821,7 @@ div#notebook {
         <span class="k">if</span> <span class="ow">not</span> <span class="n">k1</span> <span class="ow">in</span> <span class="n">all_features_list</span><span class="p">:</span>
             <span class="n">all_features_list</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">k1</span><span class="p">)</span>
 <span class="n">all_features_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">all_features_list</span><span class="p">)</span>            
-<span class="k">print</span> <span class="s1">&#39;count: &#39;</span><span class="p">,</span><span class="n">count</span><span class="p">,</span><span class="s2">&quot; poi_count: &quot;</span><span class="p">,</span><span class="n">poi_count</span><span class="p">,</span> <span class="s2">&quot;features count:&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_features_list</span><span class="p">)</span>
+<span class="k">print</span> <span class="s1">&#39;count: &#39;</span><span class="p">,</span><span class="n">count</span><span class="p">,</span><span class="s2">&quot; poi_count: &quot;</span><span class="p">,</span><span class="n">poi_count</span><span class="p">,</span> <span class="s2">&quot;features count:&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_features_list</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span>
 <span class="k">print</span> <span class="s2">&quot;all features coount:&quot;</span><span class="p">,</span> <span class="n">all_features_list</span>
 </pre></div>
 
@@ -11835,7 +11835,7 @@ div#notebook {
 
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>count:  146  poi_count:  18 features count: 21
+<pre>count:  146  poi_count:  18 features count: 20
 all features coount: [&#39;salary&#39;, &#39;to_messages&#39;, &#39;deferral_payments&#39;, &#39;total_payments&#39;, &#39;loan_advances&#39;, &#39;bonus&#39;, &#39;email_address&#39;, &#39;restricted_stock_deferred&#39;, &#39;total_stock_value&#39;, &#39;shared_receipt_with_poi&#39;, &#39;long_term_incentive&#39;, &#39;exercised_stock_options&#39;, &#39;from_messages&#39;, &#39;other&#39;, &#39;from_poi_to_this_person&#39;, &#39;from_this_person_to_poi&#39;, &#39;poi&#39;, &#39;deferred_income&#39;, &#39;expenses&#39;, &#39;restricted_stock&#39;, &#39;director_fees&#39;]
 </pre>
 </div>
@@ -11850,8 +11850,14 @@ all features coount: [&#39;salary&#39;, &#39;to_messages&#39;, &#39;deferral_pay
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>数据集中共有人数 <strong> 146 </strong> 人，其中涉嫌欺诈的有 <strong>18</strong> 人, 特征个数是 <strong>21</strong> 个</p>
-<p>看看一个典型用户有哪些特征，其值是多少</p>
+<p>数据集中共有人数 <strong> 146 </strong> 人，其中涉嫌欺诈的有 <strong>18</strong> 人, 特征个数是 <strong>20</strong> 个</p>
+<p>基于数据集具有以下特点，大致思路如下：</p>
+<ul>
+<li>这个数据集很不平衡（imbalance）, 也就说明accuracy并不是很好的评估指标，选择precision和recall更好一些。</li>
+<li>在交叉验证的时候，因为数据的不平衡性，我们会选用Stratified Shuffle Split的方式将数据分为验证集和测试集。</li>
+<li>数据样本比较少，因此我们可以使用GridSearchCV来进行参数调整，如果较大的数据则会花费较长的时间，可以考虑使用RandomizedSearchCV。</li>
+</ul>
+<p>看看一个典型用户有哪些特征，其值是多少。</p>
 
 </div>
 </div>
@@ -12091,7 +12097,9 @@ importance  9  -  deferred_income  -  0.0543682039745
 <div class="prompt input_prompt">In&nbsp;[7]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">nan_salary_count</span> <span class="o">=</span> <span class="mi">0</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="c1">### Task 2: Remove outliers</span>
+
+<span class="n">nan_salary_count</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="n">nan_bonus_count</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="n">poi_count_when_nan_salary_or_nan_bonu</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -12101,8 +12109,7 @@ importance  9  -  deferred_income  -  0.0543682039745
         <span class="k">if</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;poi&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">True</span><span class="p">:</span>
             <span class="k">print</span> <span class="n">k</span><span class="p">,</span><span class="s2">&quot; - &quot;</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;salary&quot;</span><span class="p">],</span> <span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;bonus&quot;</span><span class="p">]</span>
 <span class="k">print</span>
-<span class="k">print</span> <span class="s2">&quot;nan_salary_count: &quot;</span><span class="p">,</span> <span class="n">nan_salary_count</span><span class="p">,</span> <span class="s2">&quot; nan_bonus_count: &quot;</span><span class="p">,</span> <span class="n">nan_bonus_count</span>
-        
+<span class="k">print</span> <span class="s2">&quot;nan_salary_count: &quot;</span><span class="p">,</span> <span class="n">nan_salary_count</span><span class="p">,</span> <span class="s2">&quot; nan_bonus_count: &quot;</span><span class="p">,</span> <span class="n">nan_bonus_count</span>      
 </pre></div>
 
 </div>
@@ -12132,7 +12139,7 @@ nan_salary_count:  51  nan_bonus_count:  64
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>发现存在了不少 工资 或者 奖金 NaN, 但是这些里面存在POI人，不能说明是异常</p>
+<p>对所有人的名字做一下扫描，看看有没有异常的名字，名字中1到2个空格，我们打印出名字中空格书不是1或者2的人</p>
 
 </div>
 </div>
@@ -12142,8 +12149,122 @@ nan_salary_count:  51  nan_bonus_count:  64
 <div class="prompt input_prompt">In&nbsp;[8]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="c1">### Task 2: Remove outliers</span>
-<span class="n">bonus_idx</span> <span class="o">=</span> <span class="mi">4</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="k">for</span> <span class="n">name</span><span class="p">,</span><span class="n">_</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">mini_names</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mini_names</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">mini_names</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">print</span> <span class="n">name</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>WALLS JR ROBERT H
+BOWEN JR RAYMOND M
+OVERDYKE JR JERE C
+PEREIRA PAULO V. FERRAZ
+BLAKE JR. NORMAN P
+THE TRAVEL AGENCY IN THE PARK
+TOTAL
+WHITE JR THOMAS E
+WINOKUR JR. HERBERT S
+DERRICK JR. JAMES V
+DONAHUE JR JEFFREY M
+GLISAN JR BEN F
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>在其结果中看看，可以看出两个异常，一个是 <code>THE TRAVEL AGENCY IN THE PARK</code> 一个是 <code>TOTAL</code></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>检查每个人的各个属性，看看有没有绝大部分属性都是 NaN 的</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[9]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">nanCount</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">featurn</span><span class="p">,</span><span class="n">value</span> <span class="ow">in</span> <span class="n">v</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="s1">&#39;NaN&#39;</span><span class="p">:</span> 
+            <span class="n">nanCount</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">nanCount</span> <span class="o">&gt;</span> <span class="mi">18</span><span class="p">:</span>
+        <span class="k">print</span> <span class="n">k</span><span class="p">,</span> <span class="s2">&quot; - &quot;</span><span class="p">,</span> <span class="n">nanCount</span>
+            
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>LOCKHART EUGENE E  -  20
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>发现 LOCKHART EUGENE E 的20个属性都是NaN，这个数据完全没有一样，也应该作为异常值删掉</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>发现存在了不少 工资 或者 奖金 NaN, 但是这些里面存在POI人，不能说明是异常</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[10]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">bonus_idx</span> <span class="o">=</span> <span class="mi">4</span>
 
 <span class="n">max_bonus</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span><span class="n">bonus_idx</span><span class="p">])</span>
 <span class="k">print</span> <span class="s2">&quot;max_bonus &quot;</span><span class="p">,</span> <span class="n">max_bonus</span>
@@ -12184,10 +12305,12 @@ the max bonus person is  TOTAL
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[9]:</div>
+<div class="prompt input_prompt">In&nbsp;[11]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="n">data_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;TOTAL&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">data_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;THE TRAVEL AGENCY IN THE PARK&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">data_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;LOCKHART EUGENE E&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 <span class="n">y</span><span class="p">,</span> <span class="n">X</span> <span class="o">=</span> <span class="n">targetFeatureSplit</span><span class="p">(</span><span class="n">featureFormat</span><span class="p">(</span><span class="n">data_dict</span><span class="p">,</span> <span class="n">features_list</span><span class="p">))</span>
 <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 <span class="k">print</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
@@ -12203,7 +12326,7 @@ the max bonus person is  TOTAL
 
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>(144L, 10L)
+<pre>(143L, 10L)
 </pre>
 </div>
 </div>
@@ -12224,7 +12347,7 @@ the max bonus person is  TOTAL
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[10]:</div>
+<div class="prompt input_prompt">In&nbsp;[12]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -12266,7 +12389,7 @@ the max bonus person is  TOTAL
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[11]:</div>
+<div class="prompt input_prompt">In&nbsp;[13]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -12315,9 +12438,88 @@ the 2 max salary abd bonus is SKILLING JEFFREY K -- 1111258,5600000
 </div>
 </div>
 </div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>由于项目要求对比创建新特征前后，最后结果对比，由于机器学习算法很多，我就用朴素贝叶斯算法来做对比的，因为简单，我先记录下使用老特征用朴素贝叶斯的执行结果 f1。</p>
+<p>因为 f1 是 percision 和 recall 的综合得分</p>
+
+</div>
+</div>
+</div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[12]:</div>
+<div class="prompt input_prompt">In&nbsp;[14]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">featureFormat</span><span class="p">(</span><span class="n">data_dict</span><span class="p">,</span> <span class="n">features_list</span><span class="p">,</span> <span class="n">sort_keys</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+<span class="n">y</span><span class="p">,</span> <span class="n">X</span> <span class="o">=</span> <span class="n">targetFeatureSplit</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="k">print</span> <span class="s2">&quot;features &quot;</span><span class="p">,</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+<span class="k">print</span> <span class="s2">&quot;lables &quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">GridSearchCV</span>
+<span class="kn">from</span> <span class="nn">sklearn.cross_validation</span> <span class="kn">import</span> <span class="n">StratifiedShuffleSplit</span>
+<span class="kn">from</span> <span class="nn">sklearn.naive_bayes</span> <span class="kn">import</span> <span class="n">GaussianNB</span>
+
+<span class="n">cv</span> <span class="o">=</span> <span class="n">StratifiedShuffleSplit</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">naive_clf</span> <span class="o">=</span> <span class="n">GaussianNB</span><span class="p">()</span>
+<span class="n">parameters</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">naive_clf_grid</span> <span class="o">=</span> <span class="n">GridSearchCV</span><span class="p">(</span><span class="n">naive_clf</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="n">cv</span><span class="p">,</span> <span class="n">scoring</span><span class="o">=</span><span class="s1">&#39;f1&#39;</span><span class="p">)</span>
+<span class="n">naive_clf_grid</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="k">print</span> <span class="s2">&quot;use only old feature f1 is: &quot;</span><span class="p">,</span> <span class="n">naive_clf_grid</span><span class="o">.</span><span class="n">best_score_</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>features  (143L, 10L)
+lables  143
+</pre>
+</div>
+</div>
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stderr output_text">
+<pre>C:\Users\elnin\Anaconda2\lib\site-packages\sklearn\metrics\classification.py:1113: UndefinedMetricWarning: F-score is ill-defined and being set to 0.0 due to no predicted samples.
+  &#39;precision&#39;, &#39;predicted&#39;, average, warn_for)
+</pre>
+</div>
+</div>
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>use only old feature f1 is:  0.321380952381
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>下面开始创建新特性</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[15]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="c1">### Task 3: Create new feature(s)</span>
@@ -12346,7 +12548,7 @@ the 2 max salary abd bonus is SKILLING JEFFREY K -- 1111258,5600000
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[13]:</div>
+<div class="prompt input_prompt">In&nbsp;[16]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">my_dataset</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -12379,7 +12581,7 @@ the 2 max salary abd bonus is SKILLING JEFFREY K -- 1111258,5600000
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[14]:</div>
+<div class="prompt input_prompt">In&nbsp;[17]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">my_dataset</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -12399,7 +12601,7 @@ the 2 max salary abd bonus is SKILLING JEFFREY K -- 1111258,5600000
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[15]:</div>
+<div class="prompt input_prompt">In&nbsp;[18]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="c1">### Extract features and labels from dataset for local testing</span>
@@ -12422,8 +12624,8 @@ the 2 max salary abd bonus is SKILLING JEFFREY K -- 1111258,5600000
 
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>features  (144L, 13L)
-lables  144
+<pre>features  (143L, 13L)
+lables  143
 </pre>
 </div>
 </div>
@@ -12444,7 +12646,7 @@ lables  144
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[16]:</div>
+<div class="prompt input_prompt">In&nbsp;[19]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="n">clf</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">DecisionTreeClassifier</span><span class="p">(</span><span class="n">random_state</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
@@ -12466,15 +12668,15 @@ lables  144
 
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>clf.feature_importances_ :  [ 0.04232804  0.          0.02817127  0.04232804  0.          0.          0.
-  0.27209809  0.27220666  0.08300395  0.25986395  0.          0.        ]
-importance  0  -  exercised_stock_options  -  0.272206660442
-importance  1  -  expenses  -  0.272098088247
-importance  2  -  from_this_to_poi_ratio  -  0.259863945578
-importance  3  -  deferred_income  -  0.0830039525692
-importance  4  -  long_term_incentive  -  0.042328042328
-importance  5  -  bonus  -  0.042328042328
-importance  6  -  restricted_stock  -  0.0281712685074
+<pre>clf.feature_importances_ :  [ 0.04237037  0.          0.02814706  0.04237037  0.          0.          0.
+  0.27237019  0.272119    0.08308696  0.25953606  0.          0.        ]
+importance  0  -  expenses  -  0.272370186335
+importance  1  -  exercised_stock_options  -  0.272118995
+importance  2  -  from_this_to_poi_ratio  -  0.259536062579
+importance  3  -  deferred_income  -  0.0830869565217
+importance  4  -  long_term_incentive  -  0.0423703703704
+importance  5  -  bonus  -  0.0423703703704
+importance  6  -  restricted_stock  -  0.0281470588235
 importance  7  -  bonus_times  -  0.0
 importance  8  -  from_poi_to_this_ratio  -  0.0
 importance  9  -  other  -  0.0
@@ -12498,7 +12700,7 @@ importance  9  -  other  -  0.0
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[17]:</div>
+<div class="prompt input_prompt">In&nbsp;[20]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="n">new_features_list</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;poi&#39;</span><span class="p">]</span>
@@ -12525,7 +12727,7 @@ importance  9  -  other  -  0.0
 
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>[&#39;poi&#39;, &#39;exercised_stock_options&#39;, &#39;expenses&#39;, &#39;from_this_to_poi_ratio&#39;, &#39;deferred_income&#39;, &#39;long_term_incentive&#39;, &#39;bonus&#39;, &#39;restricted_stock&#39;]
+<pre>[&#39;poi&#39;, &#39;expenses&#39;, &#39;exercised_stock_options&#39;, &#39;from_this_to_poi_ratio&#39;, &#39;deferred_income&#39;, &#39;long_term_incentive&#39;, &#39;bonus&#39;, &#39;restricted_stock&#39;]
 features  (141L, 7L)
 lables  141
 </pre>
@@ -12549,7 +12751,7 @@ lables  141
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[81]:</div>
+<div class="prompt input_prompt">In&nbsp;[21]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="c1">### Task 4: Try a varity of classifiers</span>
@@ -12611,7 +12813,7 @@ lables  141
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[90]:</div>
+<div class="prompt input_prompt">In&nbsp;[22]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="c1"># GaussianNB</span>
@@ -12654,13 +12856,14 @@ after pca f1:  0.377666666667
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
+<p>结果出来，可以和前面的特征来对比，使用老特征的f1分数是 <code>0.321380952381</code> 使用新特征的f1分数是 <code>0.413857142857</code> 可以看出，使用新添加的特征后，结果是好于老特征的。</p>
 <h3 id="&#23581;&#35797;&#20915;&#31574;&#26641;&#31639;&#27861;">&#23581;&#35797;&#20915;&#31574;&#26641;&#31639;&#27861;<a class="anchor-link" href="#&#23581;&#35797;&#20915;&#31574;&#26641;&#31639;&#27861;">&#182;</a></h3>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[20]:</div>
+<div class="prompt input_prompt">In&nbsp;[23]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="c1"># DissionTree</span>
@@ -12689,7 +12892,7 @@ after pca f1:  0.377666666667
 
 <div class="output_area"><div class="prompt"></div>
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>before pca f1:  0.193714285714
+<pre>before pca f1:  0.208412698413
 after pca f1:  0.38946031746
 </pre>
 </div>
@@ -12710,7 +12913,7 @@ after pca f1:  0.38946031746
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[86]:</div>
+<div class="prompt input_prompt">In&nbsp;[24]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="c1"># KNN</span>
@@ -12756,52 +12959,13 @@ after pca f1:  0.314333333333
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="&#23581;&#35797;SVM&#31639;&#27861;">&#23581;&#35797;SVM&#31639;&#27861;<a class="anchor-link" href="#&#23581;&#35797;SVM&#31639;&#27861;">&#182;</a></h3><p><strong> 很奇怪，svm 一直计算，远出不来结果，只能暂时屏蔽掉</strong> 原因不明</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[21]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="c1"># # svm</span>
-<span class="c1"># from sklearn.svm import SVC</span>
-<span class="c1"># svm_clf = SVC(random_state=42)</span>
-<span class="c1"># parameters = {&#39;kernel&#39;: (&#39;rbf&#39;,&#39;linear&#39;), </span>
-<span class="c1">#               &#39;C&#39;: [1,10]}</span>
-<span class="c1"># svm_clf_grid = GridSearchCV(svm_clf, parameters, cv=cv, scoring=&#39;f1&#39;)</span>
-<span class="c1"># svm_clf_grid.fit(X, y)</span>
-<span class="c1"># print &quot;before pca f1: &quot;, svm_clf_grid.best_score_</span>
-
-<span class="c1"># pca_svm_clf = Pipeline([(&#39;pca&#39;, pca), (&#39;svc&#39;, svm_clf)])</span>
-<span class="c1"># parameters = {&#39;pca__n_components&#39;: [3,5,7,9],</span>
-<span class="c1">#               &#39;svc__kernel&#39;: [&#39;rbf&#39;,&#39;linear&#39;], </span>
-<span class="c1">#               &#39;svc__C&#39;: [1,10]</span>
-<span class="c1">#              }</span>
-<span class="c1"># pca_svm_clf_grid = GridSearchCV(pca_svm_clf, parameters, cv=cv, scoring=&#39;f1&#39;)</span>
-<span class="c1"># pca_svm_clf_grid.fit(X, y)</span>
-<span class="c1"># print &quot;after pca f1: &quot;, pca_svm_clf_grid.best_score_</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered">
-<div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
 <h3 id="&#23581;&#35797;&#19968;&#20123;&#38598;&#25104;&#23398;&#20064;&#31639;&#27861;&#65292;AdaBoost">&#23581;&#35797;&#19968;&#20123;&#38598;&#25104;&#23398;&#20064;&#31639;&#27861;&#65292;AdaBoost<a class="anchor-link" href="#&#23581;&#35797;&#19968;&#20123;&#38598;&#25104;&#23398;&#20064;&#31639;&#27861;&#65292;AdaBoost">&#182;</a></h3>
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[22]:</div>
+<div class="prompt input_prompt">In&nbsp;[25]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="c1"># AdaBoost</span>
@@ -12853,7 +13017,7 @@ after pca f1:  0.361714285714
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[23]:</div>
+<div class="prompt input_prompt">In&nbsp;[26]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="c1"># RandomForest</span>
@@ -12905,7 +13069,7 @@ after pca f1:  0.343380952381
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[91]:</div>
+<div class="prompt input_prompt">In&nbsp;[27]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="c1">### Task 5: Tune your classifier to achieve better than .3 precision and recall </span>
@@ -12950,7 +13114,7 @@ after pca f1:  0.343380952381
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[94]:</div>
+<div class="prompt input_prompt">In&nbsp;[28]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.cross_validation</span> <span class="kn">import</span> <span class="n">train_test_split</span>
@@ -13015,7 +13179,7 @@ after pca f1:  0.343380952381
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[92]:</div>
+<div class="prompt input_prompt">In&nbsp;[29]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="c1">### Task 6: Dump your classifier, dataset, and features_list so anyone can</span>
@@ -13048,7 +13212,7 @@ after pca f1:  0.343380952381
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[28]:</div>
+<div class="prompt input_prompt">In&nbsp;[30]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="k">print</span> <span class="s2">&quot;done&quot;</span>

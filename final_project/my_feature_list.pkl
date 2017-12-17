@@ -1,9 +1,9 @@
 (lp0
 S'poi'
 p1
-aS'exercised_stock_options'
-p2
 aS'expenses'
+p2
+aS'exercised_stock_options'
 p3
 aS'from_this_to_poi_ratio'
 p4

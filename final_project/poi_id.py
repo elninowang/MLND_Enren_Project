@@ -58,6 +58,8 @@ for k,v in data_dict.items():
         print "the max bonus person is ", k
 
 data_dict.pop("TOTAL", 0)
+data_dict.pop("THE TRAVEL AGENCY IN THE PARK", 0)
+data_dict.pop("LOCKHART EUGENE E", 0)
 y, X = targetFeatureSplit(featureFormat(data_dict, features_list))
 X = np.array(X)
 print X.shape
